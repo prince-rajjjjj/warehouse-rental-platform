@@ -49,3 +49,39 @@ export interface OwnerWarehouse extends WarehouseRequest {
   createdAt: string;
   imageUrls: string[];
 }
+
+export interface PublicWarehouse {
+  id: number;
+  title: string;
+  description: string;
+  city: string;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+  sizeSqFt: number;
+  pricePerMonth: number;
+  type: WarehouseType;
+  amenities: string | null;
+  ownerName: string;
+  averageRating: number | null;
+  reviewCount: number;
+  imageUrls: string[];
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface WarehouseSearchQuery {
+  city?: string;
+  type?: WarehouseType | '';
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  sort?: string;
+  page: number;
+  pageSize: number;
+}

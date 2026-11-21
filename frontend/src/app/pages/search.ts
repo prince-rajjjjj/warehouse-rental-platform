@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -15,6 +16,7 @@ import { extractError } from '../core/http-error';
   selector: 'app-search',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     CurrencyPipe,
     MatCardModule,
     MatFormFieldModule,
@@ -94,13 +96,18 @@ import { extractError } from '../core/http-error';
               </mat-card-header>
               <mat-card-content>
                 <p>{{ w.sizeSqFt }} sq ft &middot; {{ w.type }}</p>
-                <p class="price">{{ w.pricePerMonth | currency: 'INR' : 'symbol' : '1.0-0' }} / month</p>
+                <p class="price">
+                  {{ w.pricePerMonth | currency: 'INR' : 'symbol' : '1.0-0' }} / month
+                </p>
                 @if (w.averageRating !== null) {
                   <p>Rating: {{ w.averageRating.toFixed(1) }} ({{ w.reviewCount }})</p>
                 } @else {
                   <p class="muted">No reviews yet</p>
                 }
               </mat-card-content>
+              <mat-card-actions>
+                <a mat-button [routerLink]="['/warehouse', w.id]">View details</a>
+              </mat-card-actions>
             </mat-card>
           }
         </div>
@@ -116,16 +123,52 @@ import { extractError } from '../core/http-error';
     </div>
   `,
   styles: `
-    .page { padding: 24px 16px; max-width: 1100px; margin: 0 auto; }
-    .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: start; }
-    .buttons { display: flex; gap: 8px; align-items: center; height: 56px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
-    .card { padding-bottom: 8px; }
-    .placeholder { height: 160px; display: flex; align-items: center; justify-content: center; background: #eceff1; color: #78909c; }
-    .price { font-weight: 600; }
-    .muted { color: #78909c; }
-    .count { margin: 16px 0 0; }
-    .error { color: #b3261e; }
+    .page {
+      padding: 24px 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      height: 56px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .card {
+      padding-bottom: 8px;
+    }
+    .placeholder {
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eceff1;
+      color: #78909c;
+    }
+    .price {
+      font-weight: 600;
+    }
+    .muted {
+      color: #78909c;
+    }
+    .count {
+      margin: 16px 0 0;
+    }
+    .error {
+      color: #b3261e;
+    }
   `,
 })
 export class Search {

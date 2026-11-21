@@ -15,6 +15,9 @@ import { AuthService } from './core/auth.service';
         @if (user.role === 'Owner') {
           <a mat-button routerLink="/owner">My warehouses</a>
         }
+        @if (user.role === 'Admin') {
+          <a mat-button routerLink="/admin">Approvals</a>
+        }
         <span class="hello">{{ user.name }}</span>
         <button mat-button (click)="auth.logout()">Log out</button>
       } @else {
@@ -25,9 +28,17 @@ import { AuthService } from './core/auth.service';
     <router-outlet />
   `,
   styles: `
-    .brand { font-weight: 600; text-decoration: none; color: inherit; }
-    .spacer { flex: 1; }
-    .hello { margin-right: 8px; }
+    .brand {
+      font-weight: 600;
+      text-decoration: none;
+      color: inherit;
+    }
+    .spacer {
+      flex: 1;
+    }
+    .hello {
+      margin-right: 8px;
+    }
   `,
 })
 export class App {

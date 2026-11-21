@@ -85,3 +85,8 @@ export interface WarehouseSearchQuery {
   page: number;
   pageSize: number;
 }
+
+export interface AdminWarehouse extends OwnerWarehouse {
+  ownerName: string;
+  ownerEmail: string;
+}

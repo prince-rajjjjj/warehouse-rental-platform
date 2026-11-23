@@ -105,6 +105,41 @@ public class WarehousesController : ControllerBase
         return dto is null ? NotFound() : Ok(dto);
     }
 
+    [HttpGet("{id:int}/availability")]
+    public async Task<ActionResult<List<UnavailableRange>>> Availability(int id)
+    {
+        var exists = await _db.WarehouseListings
+            .AnyAsync(w => w.Id == id && w.Status == ListingStatus.Approved);
+        if (!exists) return NotFound();
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var now = DateTime.UtcNow;
+
+        var booked = await _db.Bookings
+            .AsNoTracking()
+            .Where(b => b.WarehouseListingId == id
+                && b.EndDate > today
+                && (b.Status == BookingStatus.Confirmed
+                    || b.Status == BookingStatus.Pending
+                    || (b.Status == BookingStatus.PendingPayment && b.HoldExpiresAt > now)))
+            .Select(b => new { b.StartDate, b.EndDate })
+            .ToListAsync();
+
+        var blocked = await _db.BlockedDates
+            .AsNoTracking()
+            .Where(d => d.WarehouseListingId == id && d.EndDate >= today)
+            .Select(d => new { d.StartDate, d.EndDate })
+            .ToListAsync();
+
+        var ranges = booked
+            .Select(b => new UnavailableRange { Start = b.StartDate, End = b.EndDate })
+            .Concat(blocked.Select(d => new UnavailableRange { Start = d.StartDate, End = d.EndDate.AddDays(1) }))
+            .OrderBy(r => r.Start)
+            .ToList();
+
+        return Ok(ranges);
+    }
+
     // Stops "%" and "_" typed by a user from acting as wildcards.
     private static string EscapeLike(string s) =>
         s.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");

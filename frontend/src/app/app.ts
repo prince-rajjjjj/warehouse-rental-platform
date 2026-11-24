@@ -18,6 +18,9 @@ import { AuthService } from './core/auth.service';
         @if (user.role === 'Admin') {
           <a mat-button routerLink="/admin">Approvals</a>
         }
+        @if (user.role === 'Renter') {
+          <a mat-button routerLink="/bookings">My bookings</a>
+        }
         <span class="hello">{{ user.name }}</span>
         <button mat-button (click)="auth.logout()">Log out</button>
       } @else {

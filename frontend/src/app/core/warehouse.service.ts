@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { PagedResult, PublicWarehouse, WarehouseSearchQuery } from './models';
+import { PagedResult, PublicWarehouse, UnavailableRange, WarehouseSearchQuery } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class WarehouseService {
@@ -22,5 +22,9 @@ export class WarehouseService {
 
   getOne(id: number) {
     return this.http.get<PublicWarehouse>(`${this.baseUrl}/${id}`);
+  }
+
+  getAvailability(id: number) {
+    return this.http.get<UnavailableRange[]>(`${this.baseUrl}/${id}/availability`);
   }
 }

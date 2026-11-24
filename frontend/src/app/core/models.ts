@@ -90,3 +90,28 @@ export interface AdminWarehouse extends OwnerWarehouse {
   ownerName: string;
   ownerEmail: string;
 }
+
+export interface UnavailableRange {
+  start: string; // "2026-12-10"
+  end: string;   // exclusive: the checkout day
+}
+
+export interface CreateBookingRequest {
+  warehouseId: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface Booking {
+  id: number;
+  warehouseId: number;
+  warehouseTitle: string;
+  warehouseCity: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  totalAmount: number;
+  status: string;
+  holdExpiresAt: string | null;
+  createdAt: string;
+}

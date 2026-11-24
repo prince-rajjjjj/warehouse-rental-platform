@@ -7,10 +7,11 @@ import { AuthService } from '../core/auth.service';
 import { WarehouseService } from '../core/warehouse.service';
 import { PublicWarehouse } from '../core/models';
 import { extractError } from '../core/http-error';
+import { BookingPanel } from './booking-panel';
 
 @Component({
   selector: 'app-warehouse-details',
-  imports: [CurrencyPipe, RouterLink, MatCardModule, MatButtonModule],
+  imports: [CurrencyPipe, RouterLink, MatCardModule, MatButtonModule, BookingPanel],
   template: `
     <div class="page">
       <a mat-button routerLink="/">&larr; Back to search</a>
@@ -68,8 +69,12 @@ import { extractError } from '../core/http-error';
                 {{ w.pricePerMonth | currency: 'INR' : 'symbol' : '1.0-0' }} <span>/ month</span>
               </p>
 
-              @if (auth.user()) {
-                <button mat-flat-button disabled>Booking coming soon</button>
+              @if (auth.hasRole('Renter')) {
+                <app-booking-panel [warehouseId]="w.id" [pricePerMonth]="w.pricePerMonth" />
+              } @else if (auth.user()) {
+                <p class="muted">
+                  Only renter accounts can book. Log in with a renter account to reserve.
+                </p>
               } @else {
                 <a mat-flat-button routerLink="/login">Log in to book</a>
               }

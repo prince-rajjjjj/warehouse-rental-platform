@@ -7,6 +7,7 @@ import { OwnerDashboard } from './pages/owner-dashboard';
 import { WarehouseForm } from './pages/warehouse-form';
 import { WarehouseDetails } from './pages/warehouse-details';
 import { AdminWarehouses } from './pages/admin-warehouses';
+import { MyBookings } from './pages/my-bookings';
 
 export const routes: Routes = [
   { path: '', component: Search },
@@ -21,5 +22,6 @@ export const routes: Routes = [
   },
   { path: 'warehouse/:id', component: WarehouseDetails },
   { path: 'admin', component: AdminWarehouses, canActivate: [authGuard, roleGuard('Admin')] },
+  { path: 'bookings', component: MyBookings, canActivate: [authGuard, roleGuard('Renter')] },
   { path: '**', redirectTo: '' },
 ];

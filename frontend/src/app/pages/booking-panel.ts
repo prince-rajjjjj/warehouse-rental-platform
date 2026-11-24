@@ -13,6 +13,7 @@ import { UnavailableRange } from '../core/models';
 import { AppDateAdapter, APP_DATE_FORMATS } from '../core/date-adapter';
 import { daysBetween, toIsoDate } from '../core/date-utils';
 import { extractError } from '../core/http-error';
+import { DateMaskDirective } from '../core/date-mask.directive';
 
 const MIN_DAYS = 7;
 const MAX_DAYS = 365;
@@ -26,6 +27,7 @@ const MAX_DAYS = 365;
     MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
+    DateMaskDirective,
   ],
   providers: [
     { provide: DateAdapter, useClass: AppDateAdapter },
@@ -34,10 +36,13 @@ const MAX_DAYS = 365;
   ],
   template: `
     <div [formGroup]="range">
-      <mat-form-field appearance="outline" class="full">
+      <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
         <mat-label>Start date</mat-label>
         <input
           matInput
+          appDateMask
+          maxlength="10"
+          inputmode="numeric"
           [matDatepicker]="startPicker"
           formControlName="start"
           placeholder="DD/MM/YYYY"
@@ -50,10 +55,13 @@ const MAX_DAYS = 365;
         <mat-error>{{ startError() }}</mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full">
+      <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
         <mat-label>End date</mat-label>
         <input
           matInput
+          appDateMask
+          maxlength="10"
+          inputmode="numeric"
           [matDatepicker]="endPicker"
           formControlName="end"
           placeholder="DD/MM/YYYY"
@@ -88,11 +96,25 @@ const MAX_DAYS = 365;
     <p class="note">Your dates are held for 15 minutes while you pay.</p>
   `,
   styles: `
-    .full { width: 100%; }
-    .summary { margin: 8px 0 16px; }
-    .total { font-size: 22px; font-weight: 600; }
-    .note { color: #78909c; font-size: 12px; margin: 4px 0; }
-    .error { color: #b3261e; margin: 8px 0; }
+    .full {
+      width: 100%;
+    }
+    .summary {
+      margin: 8px 0 16px;
+    }
+    .total {
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .note {
+      color: #78909c;
+      font-size: 12px;
+      margin: 4px 0;
+    }
+    .error {
+      color: #b3261e;
+      margin: 8px 0;
+    }
   `,
 })
 export class BookingPanel implements OnInit {
@@ -149,7 +171,8 @@ export class BookingPanel implements OnInit {
   endError(): string {
     const c = this.range.controls.end;
     if (c.hasError('matDatepickerParse')) return 'Enter a valid date as DD/MM/YYYY';
-    if (c.hasError('matDatepickerMin')) return `End date must be at least ${MIN_DAYS} days after the start date`;
+    if (c.hasError('matDatepickerMin'))
+      return `End date must be at least ${MIN_DAYS} days after the start date`;
     if (c.hasError('matDatepickerFilter')) return 'This date is not available';
     return '';
   }

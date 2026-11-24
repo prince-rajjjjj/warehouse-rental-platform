@@ -2,7 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { provideNativeDateAdapter } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { BookingService } from '../core/booking.service';
 import { WarehouseService } from '../core/warehouse.service';
 import { UnavailableRange } from '../core/models';
+import { AppDateAdapter, APP_DATE_FORMATS } from '../core/date-adapter';
 import { daysBetween, toIsoDate } from '../core/date-utils';
 import { extractError } from '../core/http-error';
 
@@ -26,24 +27,47 @@ const MAX_DAYS = 365;
     MatFormFieldModule,
     MatInputModule,
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [
+    { provide: DateAdapter, useClass: AppDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: APP_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
+  ],
   template: `
-    <mat-form-field appearance="outline" class="full">
-      <mat-label>Rental period</mat-label>
-      <mat-date-range-input
-        [formGroup]="range"
-        [rangePicker]="picker"
-        [min]="today"
-        [dateFilter]="dateFilter"
-      >
-        <input matStartDate formControlName="start" placeholder="Start" />
-        <input matEndDate formControlName="end" placeholder="End" />
-      </mat-date-range-input>
-      <mat-datepicker-toggle matIconSuffix [for]="picker" />
-      <mat-date-range-picker #picker />
-    </mat-form-field>
+    <div [formGroup]="range">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Start date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="startPicker"
+          formControlName="start"
+          placeholder="DD/MM/YYYY"
+          [min]="today"
+          [matDatepickerFilter]="startFilter"
+        />
+        <mat-hint>DD/MM/YYYY</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker" />
+        <mat-datepicker #startPicker />
+        <mat-error>{{ startError() }}</mat-error>
+      </mat-form-field>
 
-    @if (days() > 0) {
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>End date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="endPicker"
+          formControlName="end"
+          placeholder="DD/MM/YYYY"
+          [min]="minEnd()"
+          [matDatepickerFilter]="endFilter"
+        />
+        <mat-hint>DD/MM/YYYY, at least {{ minDays }} days after start</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker" />
+        <mat-datepicker #endPicker [startAt]="minEnd()" />
+        <mat-error>{{ endError() }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    @if (days() > 0 && range.valid) {
       <div class="summary">
         <div>{{ days() }} days</div>
         <div class="total">{{ total() | currency: 'INR' : 'symbol' : '1.0-0' }}</div>
@@ -79,6 +103,7 @@ export class BookingPanel implements OnInit {
   warehouseId = input.required<number>();
   pricePerMonth = input.required<number>();
 
+  minDays = MIN_DAYS;
   today = new Date();
   unavailable = signal<UnavailableRange[]>([]);
   loading = signal(false);
@@ -93,12 +118,41 @@ export class BookingPanel implements OnInit {
     this.loadAvailability();
   }
 
-  // Greys out days inside an already-booked range.
-  dateFilter = (d: Date | null): boolean => {
+  // Start day: greyed out if it falls inside a booked period.
+  startFilter = (d: Date | null): boolean => {
     if (!d) return true;
     const day = toIsoDate(d);
     return !this.unavailable().some((r) => day >= r.start && day < r.end);
   };
+
+  // End (checkout) day: greyed out if it would end inside or at the end of a booked period.
+  endFilter = (d: Date | null): boolean => {
+    if (!d) return true;
+    const day = toIsoDate(d);
+    return !this.unavailable().some((r) => day > r.start && day <= r.end);
+  };
+
+  // Earliest allowed end date: start date plus the minimum number of days.
+  minEnd(): Date {
+    const base = this.range.value.start ?? this.today;
+    return new Date(base.getFullYear(), base.getMonth(), base.getDate() + MIN_DAYS);
+  }
+
+  startError(): string {
+    const c = this.range.controls.start;
+    if (c.hasError('matDatepickerParse')) return 'Enter a valid date as DD/MM/YYYY';
+    if (c.hasError('matDatepickerMin')) return "The start date can't be in the past";
+    if (c.hasError('matDatepickerFilter')) return 'This date is already booked';
+    return '';
+  }
+
+  endError(): string {
+    const c = this.range.controls.end;
+    if (c.hasError('matDatepickerParse')) return 'Enter a valid date as DD/MM/YYYY';
+    if (c.hasError('matDatepickerMin')) return `End date must be at least ${MIN_DAYS} days after the start date`;
+    if (c.hasError('matDatepickerFilter')) return 'This date is not available';
+    return '';
+  }
 
   days(): number {
     const { start, end } = this.range.value;
@@ -109,30 +163,29 @@ export class BookingPanel implements OnInit {
     return Math.round(((this.pricePerMonth() * this.days()) / 30) * 100) / 100;
   }
 
+  // Problems the fields can't show on their own.
   problem(): string | null {
     const { start, end } = this.range.value;
-    if (!start || !end) return null;
+    if (!start || !end || this.range.invalid) return null;
 
-    const days = this.days();
-    if (days < MIN_DAYS) return `The minimum booking is ${MIN_DAYS} days.`;
-    if (days > MAX_DAYS) return `The maximum booking is ${MAX_DAYS} days.`;
+    if (this.days() > MAX_DAYS) return `The maximum booking is ${MAX_DAYS} days.`;
 
     const s = toIsoDate(start);
     const e = toIsoDate(end);
     if (this.unavailable().some((r) => s < r.end && e > r.start)) {
-      return 'Some of these dates are already booked.';
+      return 'Some days between these dates are already booked.';
     }
     return null;
   }
 
   canReserve(): boolean {
     const { start, end } = this.range.value;
-    return !!start && !!end && !this.problem() && !this.loading();
+    return !!start && !!end && this.range.valid && !this.problem() && !this.loading();
   }
 
   reserve(): void {
     const { start, end } = this.range.value;
-    if (!start || !end || this.problem()) return;
+    if (!start || !end || !this.canReserve()) return;
 
     this.loading.set(true);
     this.error.set(null);

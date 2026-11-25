@@ -20,6 +20,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddScoped<BookingService>();
 
+builder.Services.AddHttpClient<PaymentService>();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

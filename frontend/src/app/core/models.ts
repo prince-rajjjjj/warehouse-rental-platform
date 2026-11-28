@@ -48,6 +48,7 @@ export interface OwnerWarehouse extends WarehouseRequest {
   status: ListingStatus;
   createdAt: string;
   imageUrls: string[];
+  images: WarehouseImage[];
 }
 
 export interface PublicWarehouse {
@@ -89,6 +90,8 @@ export interface WarehouseSearchQuery {
 export interface AdminWarehouse extends OwnerWarehouse {
   ownerName: string;
   ownerEmail: string;
+  listingNeedsReview: boolean;
+  pendingImages: WarehouseImage[];
 }
 
 export interface UnavailableRange {
@@ -114,4 +117,33 @@ export interface Booking {
   status: string;
   holdExpiresAt: string | null;
   createdAt: string;
+}
+
+export interface OrderInfo {
+  bookingId: number;
+  orderId: string;
+  amountInPaise: number;
+  currency: string;
+  keyId: string;
+  description: string;
+}
+
+export interface VerifyPaymentRequest {
+  bookingId: number;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
+// What Razorpay's popup gives back after a successful payment.
+export interface RazorpaySuccess {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+export interface WarehouseImage {
+  id: number;
+  url: string;
+  status: 'Draft' | 'Pending' | 'Approved' | 'Rejected';
 }

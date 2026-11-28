@@ -51,4 +51,12 @@ public class WarehouseDto
     public ListingStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<string> ImageUrls { get; set; } = new();
+    public List<ImageDto> Images { get; set; } = new();
+}
+
+public class ImageDto
+{
+    public int Id { get; set; }
+    public string Url { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 }

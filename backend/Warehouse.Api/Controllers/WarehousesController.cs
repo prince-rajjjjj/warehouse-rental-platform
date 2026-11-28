@@ -63,7 +63,7 @@ public class WarehousesController : ControllerBase
                 OwnerName = w.Owner.Name,
                 AverageRating = w.Reviews.Average(r => (double?)r.Rating),
                 ReviewCount = w.Reviews.Count,
-                ImageUrls = w.Images.Select(i => i.Url).ToList()
+                ImageUrls = w.Images.Where(i => i.Status == ImageStatus.Approved).Select(i => i.Url).ToList()
             })
             .ToListAsync();
 
@@ -98,7 +98,7 @@ public class WarehousesController : ControllerBase
                 OwnerName = w.Owner.Name,
                 AverageRating = w.Reviews.Average(r => (double?)r.Rating),
                 ReviewCount = w.Reviews.Count,
-                ImageUrls = w.Images.Select(i => i.Url).ToList()
+                ImageUrls = w.Images.Where(i => i.Status == ImageStatus.Approved).Select(i => i.Url).ToList()
             })
             .FirstOrDefaultAsync();
 

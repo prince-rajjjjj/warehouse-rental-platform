@@ -20,6 +20,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddScoped<BookingService>();
 
+builder.Services.AddSingleton<ImageStorageService>();
+
 builder.Services.AddHttpClient<PaymentService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -57,6 +59,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseCors("Angular");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -45,6 +45,15 @@ import { extractError } from '../core/http-error';
                 </p>
                 <p>{{ w.sizeSqFt }} sq ft &middot; {{ w.type }}</p>
                 <p>{{ w.pricePerMonth | currency: 'INR' : 'symbol' : '1.0-0' }} / month</p>
+                @if (photoCount(w, 'Draft') > 0) {
+                  <p class="note">
+                    {{ photoCount(w, 'Draft') }} photo(s) not submitted yet. Open Edit and click
+                    Save.
+                  </p>
+                }
+                @if (photoCount(w, 'Pending') > 0) {
+                  <p class="note">{{ photoCount(w, 'Pending') }} photo(s) waiting for approval.</p>
+                }
               </mat-card-content>
               <mat-card-actions>
                 <a mat-button [routerLink]="['/owner', w.id, 'edit']">Edit</a>
@@ -57,15 +66,46 @@ import { extractError } from '../core/http-error';
     </div>
   `,
   styles: `
-    .page { padding: 24px 16px; max-width: 1000px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .card { padding: 8px; }
-    .error { color: #b3261e; }
-    .badge { padding: 2px 10px; border-radius: 12px; font-size: 12px; background: #e0e0e0; }
-    .badge.pending { background: #fff3cd; color: #7a5b00; }
-    .badge.approved { background: #d4edda; color: #1d5b2e; }
-    .badge.rejected { background: #f8d7da; color: #8a1c24; }
+    .page {
+      padding: 24px 16px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      padding: 8px;
+    }
+    .error {
+      color: #b3261e;
+    }
+    .badge {
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      background: #e0e0e0;
+    }
+    .badge.pending {
+      background: #fff3cd;
+      color: #7a5b00;
+    }
+    .badge.approved {
+      background: #d4edda;
+      color: #1d5b2e;
+    }
+    .badge.rejected {
+      background: #f8d7da;
+      color: #8a1c24;
+    }
   `,
 })
 export class OwnerDashboard {
@@ -95,5 +135,9 @@ export class OwnerDashboard {
       next: () => this.items.update((list) => list.filter((x) => x.id !== w.id)),
       error: (e) => this.error.set(extractError(e)),
     });
+  }
+
+  photoCount(w: OwnerWarehouse, status: string): number {
+    return w.images.filter((i) => i.status === status).length;
   }
 }

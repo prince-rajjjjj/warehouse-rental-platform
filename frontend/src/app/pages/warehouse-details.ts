@@ -8,10 +8,11 @@ import { WarehouseService } from '../core/warehouse.service';
 import { PublicWarehouse } from '../core/models';
 import { extractError } from '../core/http-error';
 import { BookingPanel } from './booking-panel';
+import { ImageUrlPipe } from '../core/image-url.pipe';
 
 @Component({
   selector: 'app-warehouse-details',
-  imports: [CurrencyPipe, RouterLink, MatCardModule, MatButtonModule, BookingPanel],
+  imports: [CurrencyPipe, RouterLink, MatCardModule, MatButtonModule, BookingPanel, ImageUrlPipe],
   template: `
     <div class="page">
       <a mat-button routerLink="/">&larr; Back to search</a>
@@ -27,7 +28,7 @@ import { BookingPanel } from './booking-panel';
         @if (w.imageUrls.length > 0) {
           <div class="gallery">
             @for (url of w.imageUrls; track url) {
-              <img [src]="url" [alt]="w.title" />
+              <img [src]="url | imageUrl" [alt]="w.title" />
             }
           </div>
         } @else {

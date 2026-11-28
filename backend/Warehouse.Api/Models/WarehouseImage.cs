@@ -6,4 +6,5 @@ public class WarehouseImage
     public int WarehouseListingId { get; set; }
     public WarehouseListing WarehouseListing { get; set; } = null!;
     public string Url { get; set; } = string.Empty;
+    public ImageStatus Status { get; set; } = ImageStatus.Draft;
 }

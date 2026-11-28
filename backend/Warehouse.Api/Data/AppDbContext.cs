@@ -42,6 +42,9 @@ public class AppDbContext : DbContext
 
         b.Entity<WarehouseImage>(e =>
         {
+            e.Property(i => i.Status).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(i => new { i.WarehouseListingId, i.Status });
+
             e.HasOne(i => i.WarehouseListing)
              .WithMany(w => w.Images)
              .HasForeignKey(i => i.WarehouseListingId)

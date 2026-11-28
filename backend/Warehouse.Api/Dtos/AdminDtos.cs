@@ -6,6 +6,8 @@ public class AdminWarehouseDto : WarehouseDto
 {
     public string OwnerName { get; set; } = string.Empty;
     public string OwnerEmail { get; set; } = string.Empty;
+    public bool ListingNeedsReview { get; set; }
+    public List<ImageDto> PendingImages { get; set; } = new();
 }
 
 public class AdminUserDto

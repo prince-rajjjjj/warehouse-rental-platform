@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { OwnerWarehouse, WarehouseRequest } from './models';
+import { OwnerWarehouse, WarehouseImage, WarehouseRequest } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class OwnerWarehouseService {
@@ -27,4 +27,14 @@ export class OwnerWarehouseService {
   delete(id: number) {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  uploadImage(warehouseId: number, file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  return this.http.post<WarehouseImage>(`${this.baseUrl}/${warehouseId}/images`, form);
+}
+
+deleteImage(warehouseId: number, imageId: number) {
+  return this.http.delete<void>(`${this.baseUrl}/${warehouseId}/images/${imageId}`);
+}
 }

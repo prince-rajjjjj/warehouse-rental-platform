@@ -11,6 +11,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { WarehouseService } from '../core/warehouse.service';
 import { PublicWarehouse, WarehouseType } from '../core/models';
 import { extractError } from '../core/http-error';
+import { ImageUrlPipe } from '../core/image-url.pipe';
+
 
 @Component({
   selector: 'app-search',
@@ -24,6 +26,7 @@ import { extractError } from '../core/http-error';
     MatSelectModule,
     MatButtonModule,
     MatPaginatorModule,
+    ImageUrlPipe,
   ],
   template: `
     <div class="page">
@@ -86,7 +89,7 @@ import { extractError } from '../core/http-error';
           @for (w of items(); track w.id) {
             <mat-card class="card">
               @if (w.imageUrls.length > 0) {
-                <img mat-card-image [src]="w.imageUrls[0]" [alt]="w.title" />
+                <img mat-card-image [src]="w.imageUrls[0] | imageUrl" [alt]="w.title" />
               } @else {
                 <div class="placeholder">No photo</div>
               }

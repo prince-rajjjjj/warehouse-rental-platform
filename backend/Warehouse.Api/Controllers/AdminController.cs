@@ -22,7 +22,8 @@ public class AdminController : ControllerBase
     {
         var items = await _db.WarehouseListings
             .AsNoTracking()
-            .Where(w => w.Status == ListingStatus.Pending)
+            .Where(w => w.Status == ListingStatus.Pending
+                        || w.Images.Any(i => i.Status == ImageStatus.Pending))
             .OrderBy(w => w.CreatedAt)
             .Select(w => new AdminWarehouseDto
             {
@@ -39,7 +40,13 @@ public class AdminController : ControllerBase
                 Amenities = w.Amenities,
                 Status = w.Status,
                 CreatedAt = w.CreatedAt,
-                ImageUrls = w.Images.Select(i => i.Url).ToList(),
+                ImageUrls = w.Images
+                    .Where(i => i.Status == ImageStatus.Approved)
+                    .Select(i => i.Url).ToList(),
+                PendingImages = w.Images
+                    .Where(i => i.Status == ImageStatus.Pending)
+                    .Select(i => new ImageDto { Id = i.Id, Url = i.Url, Status = "Pending" }).ToList(),
+                ListingNeedsReview = w.Status == ListingStatus.Pending,
                 OwnerName = w.Owner.Name,
                 OwnerEmail = w.Owner.Email
             })
@@ -49,10 +56,24 @@ public class AdminController : ControllerBase
     }
 
     [HttpPost("warehouses/{id:int}/approve")]
-    public Task<IActionResult> Approve(int id) => SetStatus(id, ListingStatus.Approved);
+    public Task<IActionResult> Approve(int id) => Decide(id, approve: true);
 
     [HttpPost("warehouses/{id:int}/reject")]
-    public Task<IActionResult> Reject(int id) => SetStatus(id, ListingStatus.Rejected);
+    public Task<IActionResult> Reject(int id) => Decide(id, approve: false);
+
+    [HttpPost("images/{imageId:int}/reject")]
+    public async Task<IActionResult> RejectImage(int imageId)
+    {
+        var img = await _db.WarehouseImages.FirstOrDefaultAsync(i => i.Id == imageId);
+        if (img is null) return NotFound();
+
+        if (img.Status != ImageStatus.Pending)
+            return Conflict(new { message = "This photo is not waiting for review." });
+
+        img.Status = ImageStatus.Rejected;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
 
     [HttpGet("users")]
     public async Task<ActionResult<List<AdminUserDto>>> GetUsers()
@@ -108,12 +129,27 @@ public class AdminController : ControllerBase
         return Ok(stats);
     }
 
-    private async Task<IActionResult> SetStatus(int id, ListingStatus status)
+    private async Task<IActionResult> Decide(int id, bool approve)
     {
-        var w = await _db.WarehouseListings.FirstOrDefaultAsync(x => x.Id == id);
+        var w = await _db.WarehouseListings
+            .Include(x => x.Images)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
         if (w is null) return NotFound();
 
-        w.Status = status;
+        var pendingImages = w.Images.Where(i => i.Status == ImageStatus.Pending).ToList();
+
+        if (w.Status != ListingStatus.Pending && pendingImages.Count == 0)
+            return Conflict(new { message = "There is nothing to review for this warehouse." });
+
+        // The decision covers every photo waiting for review.
+        foreach (var img in pendingImages)
+            img.Status = approve ? ImageStatus.Approved : ImageStatus.Rejected;
+
+        // The listing itself changes only if the listing was waiting for review.
+        if (w.Status == ListingStatus.Pending)
+            w.Status = approve ? ListingStatus.Approved : ListingStatus.Rejected;
+
         await _db.SaveChangesAsync();
         return Ok(new { id = w.Id, status = w.Status.ToString() });
     }

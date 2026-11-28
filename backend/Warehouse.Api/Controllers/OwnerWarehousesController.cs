@@ -68,8 +68,22 @@ public class OwnerWarehousesController : ControllerBase
 
         if (w is null) return NotFound();
 
+        // Compare BEFORE applying the changes, while the old values are still there.
+        var needsReview = w.Status == ListingStatus.Rejected
+            || w.Title != req.Title.Trim()
+            || w.Description != req.Description.Trim()
+            || w.City != req.City.Trim()
+            || w.Address != req.Address.Trim()
+            || w.Type != req.Type
+            || w.SizeSqFt != req.SizeSqFt;
+
         Apply(w, req);
-        w.Status = ListingStatus.Pending;   // an edited listing is reviewed again
+
+        if (needsReview) w.Status = ListingStatus.Pending;
+
+        // Saving is what sends the new (draft) photos to the admin.
+        foreach (var img in w.Images.Where(i => i.Status == ImageStatus.Draft))
+            img.Status = ImageStatus.Pending;
 
         await _db.SaveChangesAsync();
         return Ok(ToDto(w));
@@ -120,6 +134,7 @@ public class OwnerWarehousesController : ControllerBase
         Amenities = w.Amenities,
         Status = w.Status,
         CreatedAt = w.CreatedAt,
-        ImageUrls = w.Images.Select(i => i.Url).ToList()
+        ImageUrls = w.Images.Select(i => i.Url).ToList(),
+        Images = w.Images.Select(i => new ImageDto { Id = i.Id, Url = i.Url, Status = i.Status.ToString() }).ToList()
     };
 }

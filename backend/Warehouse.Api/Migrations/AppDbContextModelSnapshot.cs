@@ -217,6 +217,11 @@ namespace Warehouse.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasColumnType("text");
@@ -226,7 +231,7 @@ namespace Warehouse.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WarehouseListingId");
+                    b.HasIndex("WarehouseListingId", "Status");
 
                     b.ToTable("WarehouseImages");
                 });

@@ -13,10 +13,20 @@ export class AdminService {
   }
 
   approve(id: number) {
-    return this.http.post<{ id: number; status: string }>(`${this.baseUrl}/warehouses/${id}/approve`, {});
+    return this.http.post<{ id: number; status: string }>(
+      `${this.baseUrl}/warehouses/${id}/approve`,
+      {},
+    );
   }
 
   reject(id: number) {
-    return this.http.post<{ id: number; status: string }>(`${this.baseUrl}/warehouses/${id}/reject`, {});
+    return this.http.post<{ id: number; status: string }>(
+      `${this.baseUrl}/warehouses/${id}/reject`,
+      {},
+    );
+  }
+
+  rejectImage(imageId: number) {
+    return this.http.post<void>(`${this.baseUrl}/images/${imageId}/reject`, {});
   }
 }

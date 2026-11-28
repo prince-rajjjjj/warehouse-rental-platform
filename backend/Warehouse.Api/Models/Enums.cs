@@ -17,3 +17,5 @@ public enum BookingStatus
 }
 
 public enum PaymentStatus { Created = 0, Paid = 1, Failed = 2 }
+
+public enum ImageStatus { Draft = 0, Pending = 1, Approved = 2, Rejected = 3 }

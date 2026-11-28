@@ -7,8 +7,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { OwnerWarehouseService } from '../core/owner-warehouse.service';
-import { WarehouseRequest, WarehouseType } from '../core/models';
+import { WarehouseRequest, WarehouseType, WarehouseImage } from '../core/models';
 import { extractError } from '../core/http-error';
+import { firstValueFrom } from 'rxjs';
+import { ImageUrlPipe } from '../core/image-url.pipe';
 
 @Component({
   selector: 'app-warehouse-form',
@@ -20,6 +22,7 @@ import { extractError } from '../core/http-error';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    ImageUrlPipe,
   ],
   template: `
     <div class="page">
@@ -94,8 +97,47 @@ import { extractError } from '../core/http-error';
 
             <mat-form-field appearance="outline">
               <mat-label>Amenities (optional)</mat-label>
-              <input matInput formControlName="amenities" placeholder="Loading dock, CCTV, Power backup" />
+              <input
+                matInput
+                formControlName="amenities"
+                placeholder="Loading dock, CCTV, Power backup"
+              />
             </mat-form-field>
+
+            @if (isEdit) {
+              <div class="images">
+                <h3>Photos</h3>
+                <div class="thumbs">
+                  @for (img of images(); track img.id) {
+                    <div class="thumb">
+                      <img [src]="img.url | imageUrl" alt="Warehouse photo" />
+                      <span class="photo-status" [class]="'photo-status ' + img.status">{{
+                        statusLabel(img.status)
+                      }}</span>
+                      <button type="button" mat-button (click)="removeImage(img)">Remove</button>
+                    </div>
+                  }
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  [disabled]="uploading()"
+                  (change)="onFilesSelected($event)"
+                />
+                <p class="hint">
+                  JPG, PNG or WebP, up to 5 MB each, up to 8 photos. New photos stay private until
+                  you click
+                  <strong>Save</strong>, and then an admin must approve them before anyone else can
+                  see them.
+                </p>
+                @if (imageError()) {
+                  <p class="error">{{ imageError() }}</p>
+                }
+              </div>
+            } @else {
+              <p class="hint">Save the warehouse first, then you can add photos.</p>
+            }
 
             @if (error()) {
               <p class="error">{{ error() }}</p>
@@ -113,12 +155,71 @@ import { extractError } from '../core/http-error';
     </div>
   `,
   styles: `
-    .page { display: flex; justify-content: center; padding: 24px 16px; }
-    .card { width: 100%; max-width: 720px; padding: 16px; }
-    form { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .error { color: #b3261e; margin: 0 0 8px; }
+    .page {
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 720px;
+      padding: 16px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 16px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .error {
+      color: #b3261e;
+      margin: 0 0 8px;
+    }
+    .thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 8px 0;
+    }
+    .thumb img {
+      width: 140px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+    }
+    .hint {
+      color: #78909c;
+      font-size: 12px;
+    }
+    .photo-status {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .photo-status.Draft {
+      color: #ff9800;
+    }
+    .photo-status.Pending {
+      color: #2196f3;
+    }
+    .photo-status.Rejected {
+      color: #f44336;
+    }
+    .photo-status.Approved {
+      color: #4caf50;
+    }
   `,
 })
 export class WarehouseForm implements OnInit {
@@ -132,6 +233,9 @@ export class WarehouseForm implements OnInit {
 
   loading = signal(false);
   error = signal<string | null>(null);
+  images = signal<WarehouseImage[]>([]);
+  uploading = signal(false);
+  imageError = signal<string | null>(null);
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -171,6 +275,7 @@ export class WarehouseForm implements OnInit {
           amenities: w.amenities ?? '',
         });
         this.loading.set(false);
+        this.images.set(w.images);
       },
       error: (e) => {
         this.error.set(extractError(e));
@@ -201,14 +306,63 @@ export class WarehouseForm implements OnInit {
       amenities: v.amenities.trim() || null,
     };
 
-    const request$ = this.id === null ? this.service.create(body) : this.service.update(this.id, body);
+    const request$ =
+      this.id === null ? this.service.create(body) : this.service.update(this.id, body);
 
     request$.subscribe({
-      next: () => this.router.navigateByUrl('/owner'),
+      next: (w) => this.router.navigate(this.id === null ? ['/owner', w.id, 'edit'] : ['/owner']),
       error: (e) => {
         this.error.set(extractError(e));
         this.loading.set(false);
       },
     });
+  }
+
+  async onFilesSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = ''; // lets the same file be chosen again later
+    if (this.id === null || files.length === 0) return;
+
+    this.imageError.set(null);
+    this.uploading.set(true);
+
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        this.imageError.set(`${file.name} is larger than 5 MB.`);
+        break;
+      }
+      try {
+        const img = await firstValueFrom(this.service.uploadImage(this.id, file));
+        this.images.update((list) => [...list, img]);
+      } catch (e) {
+        this.imageError.set(`${file.name}: ${extractError(e)}`);
+        break;
+      }
+    }
+
+    this.uploading.set(false);
+  }
+
+  removeImage(img: WarehouseImage): void {
+    if (this.id === null || !confirm('Remove this photo?')) return;
+    this.imageError.set(null);
+    this.service.deleteImage(this.id, img.id).subscribe({
+      next: () => this.images.update((list) => list.filter((x) => x.id !== img.id)),
+      error: (e) => this.imageError.set(extractError(e)),
+    });
+  }
+
+  statusLabel(status: string): string {
+    switch (status) {
+      case 'Draft':
+        return 'Not submitted. Click Save to send for review';
+      case 'Pending':
+        return 'Waiting for admin approval';
+      case 'Rejected':
+        return 'Rejected by admin';
+      default:
+        return 'Approved and public';
+    }
   }
 }

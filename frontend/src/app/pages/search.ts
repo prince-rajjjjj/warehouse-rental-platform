@@ -13,7 +13,6 @@ import { PublicWarehouse, WarehouseType } from '../core/models';
 import { extractError } from '../core/http-error';
 import { ImageUrlPipe } from '../core/image-url.pipe';
 
-
 @Component({
   selector: 'app-search',
   imports: [
@@ -89,7 +88,12 @@ import { ImageUrlPipe } from '../core/image-url.pipe';
           @for (w of items(); track w.id) {
             <mat-card class="card">
               @if (w.imageUrls.length > 0) {
-                <img mat-card-image [src]="w.imageUrls[0] | imageUrl" [alt]="w.title" />
+                <img
+                  mat-card-image
+                  class="card-image"
+                  [src]="w.imageUrls[0] | imageUrl"
+                  [alt]="w.title"
+                />
               } @else {
                 <div class="placeholder">No photo</div>
               }
@@ -151,14 +155,40 @@ import { ImageUrlPipe } from '../core/image-url.pipe';
     }
     .card {
       padding-bottom: 8px;
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card {
+        transition: none;
+      }
+      .card:hover {
+        transform: none;
+      }
+    }
+    .card-image {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
     }
     .placeholder {
-      height: 160px;
+      aspect-ratio: 16 / 10;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #eceff1;
       color: #78909c;
+    }
+    mat-card-content {
+      flex: 1;
     }
     .price {
       font-weight: 600;

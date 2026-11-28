@@ -1,3 +1,4 @@
+import { PhotoGallery } from './photo-gallery';
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -12,7 +13,15 @@ import { ImageUrlPipe } from '../core/image-url.pipe';
 
 @Component({
   selector: 'app-warehouse-details',
-  imports: [CurrencyPipe, RouterLink, MatCardModule, MatButtonModule, BookingPanel, ImageUrlPipe],
+  imports: [
+    CurrencyPipe,
+    RouterLink,
+    MatCardModule,
+    MatButtonModule,
+    BookingPanel,
+    ImageUrlPipe,
+    PhotoGallery,
+  ],
   template: `
     <div class="page">
       <a mat-button routerLink="/">&larr; Back to search</a>
@@ -25,15 +34,7 @@ import { ImageUrlPipe } from '../core/image-url.pipe';
         <h1>{{ w.title }}</h1>
         <p class="muted">{{ w.address }}, {{ w.city }}</p>
 
-        @if (w.imageUrls.length > 0) {
-          <div class="gallery">
-            @for (url of w.imageUrls; track url) {
-              <img [src]="url | imageUrl" [alt]="w.title" />
-            }
-          </div>
-        } @else {
-          <div class="placeholder">No photos yet</div>
-        }
+        <app-photo-gallery [images]="w.imageUrls" [title]="w.title" />
 
         <div class="layout">
           <div>
@@ -96,28 +97,6 @@ import { ImageUrlPipe } from '../core/image-url.pipe';
     }
     .error {
       color: #b3261e;
-    }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 8px;
-      margin: 16px 0;
-    }
-    .gallery img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-    .placeholder {
-      height: 180px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #eceff1;
-      color: #78909c;
-      border-radius: 8px;
-      margin: 16px 0;
     }
     .layout {
       display: grid;
